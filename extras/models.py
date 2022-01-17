@@ -84,7 +84,7 @@ class Rating(models.Model):
          default = uuid.uuid4,
          editable = False)
     instructor = models.ForeignKey(Instructor , on_delete=models.CASCADE,blank=True, null=True)
-    rating_content = models.TextField()
+    rating_content = models.TextField(default="")
     rating_value = models.FloatField(default=0)
     course_rated = models.ForeignKey('courses.Course', on_delete=models.CASCADE,blank=True, null=True)
     created_at = models.DateField(auto_now_add=True)

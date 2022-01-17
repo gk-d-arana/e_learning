@@ -21,7 +21,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -98,19 +98,32 @@ ASGI_APPLICATION = "e_learning.asgi.application"
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
+
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+
+    'ENGINE': 'django.db.backends.postgresql_psycopg2',
+
+    'NAME': 'eoe',
+
+    'USER': 'icr',
+
+    'PASSWORD': 'password',
+
+    'HOST': 'localhost',
+
+    'PORT': '',
+
     }
-}
+
+    }
 
 
 
-import dj_database_url
+# import dj_database_url
 
-db_from_env = dj_database_url.config(conn_max_age=600)
+# db_from_env = dj_database_url.config(conn_max_age=600)
 
-DATABASES['default'].update(db_from_env)
+# DATABASES['default'].update(db_from_env)
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators

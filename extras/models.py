@@ -25,7 +25,7 @@ class Category(models.Model):
         default = uuid.uuid4,
         editable = False)
     category_name = models.CharField(max_length=255)
-    parent_category = models.ForeignKey(ParentCategory, on_delete=models.CASCADE)
+    parent_category = models.ForeignKey(ParentCategory, on_delete=models.CASCADE, blank=True, null=True)
     category_image = models.FileField(upload_to='static/images',blank=True, null=True)
     category_description = models.TextField(blank=True, null=True, default="")
     students_count = models.PositiveIntegerField(default=0)
@@ -43,7 +43,7 @@ class Topic(models.Model):
          default = uuid.uuid4,
          editable = False)
      topic_name = models.CharField(max_length=255)
-     category = models.ForeignKey(Category, on_delete=models.CASCADE)
+     category = models.ForeignKey(Category, on_delete=models.CASCADE, blank=True, null=True)
 
      def __str__(self):
          return "Topic {}".format(self.topic_name)
@@ -66,7 +66,7 @@ class PaymentType(models.Model):
         choices = PROVIDER_CHOICES,
         default = 'Visa'
         )
-    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE, blank=True, null=True)
     card_number = models.CharField(max_length=16)
     card_cvc = models.PositiveIntegerField(default=123)
     card_expire_date = models.DateField(default="1999-01-01")

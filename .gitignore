@@ -1,0 +1,7 @@
+venv/
+db.sqlite3
+.swift-sfdc.json
+e-learning-collection.json
+.env
+static/images/
+static/videos/

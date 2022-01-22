@@ -1,4 +1,3 @@
-from django.db.models import fields
 from rest_framework import serializers
 from .models import *
 from extras.serializers import *
@@ -185,6 +184,7 @@ class InstruCourseTestSerializer(serializers.ModelSerializer):
         
 class MyMultipleChoiceQuestionSerializer(serializers.ModelSerializer):
     question = MultipleChoiceQuestionSerializer(MultipleChoiceQuestion)
+    answer = AnswerSerializer(Answer)
     class Meta:
         model = MyMultipleChoiceQuestion
         fields = "__all__"
@@ -231,4 +231,15 @@ class MeetingInstructorSerializer(serializers.ModelSerializer):
     students = InstructorSerializer(Instructor, many=True)
     class Meta:
         model = Meeting
+        fields = "__all__"
+        
+        
+class MyTestSerializer(serializers.ModelSerializer):
+    instructor = SimpleInstructorSerializer(Instructor)
+    course_test = InstruCourseTestSerializer(CourseTest)
+    my_multi_choice_ques_answers = MyMultipleChoiceQuestionSerializer(MyMultipleChoiceQuestion, many=True)
+    my_edot_ques_answers = MyEditorialQuestionSerializer(MyEditorialQuestion, many=True)
+    
+    class Meta:
+        model = MyTest
         fields = "__all__"

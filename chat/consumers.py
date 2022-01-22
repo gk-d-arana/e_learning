@@ -27,7 +27,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         chat_room, created = ChatRoom.objects.get_or_create(id=self.room_group_name)
         chat_room.chat_room_participants.add(Instructor.objects.get(id=instructor_id))
 
-
+    
     @database_sync_to_async
     def get_chat_room(self):
         chat_room, created = ChatRoom.objects.get_or_create(id=self.room_group_name)

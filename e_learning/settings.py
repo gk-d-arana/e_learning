@@ -21,7 +21,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = 'django-insecure-0d6($3s18ii2)kp@ang$##+atogbqpb2-96#9c+!x9+tzoa*tl'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -97,33 +97,33 @@ ASGI_APPLICATION = "e_learning.asgi.application"
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = {
-
-    'default': {
-
-    'ENGINE': 'django.db.backends.postgresql_psycopg2',
-
-    'NAME': 'eoe',
-
-    'USER': 'icr',
-
-    'PASSWORD': 'icricricr',
-
-    'HOST': 'localhost',
-
-    'PORT': '',
-
-    }
-
-    }
-
-
 # DATABASES = {
+
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
+
+#     'ENGINE': 'django.db.backends.postgresql_psycopg2',
+
+#     'NAME': 'eoe',
+
+#     'USER': 'icr',
+
+#     'PASSWORD': 'icricricr',
+
+#     'HOST': 'localhost',
+
+#     'PORT': '',
+
 #     }
-# }
+
+#     }
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
 # import dj_database_url
 

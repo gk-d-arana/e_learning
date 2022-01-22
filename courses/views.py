@@ -2,7 +2,7 @@ import json
 from extras.serializers import ParentCategorySerializer, RatingSerializer
 from extras.models import Category, ParentCategory, Rating, Topic
 from rest_framework.response import Response
-from courses.serializers import CartCourseSerializer, CourseSerializer, EnrollmentSerializer, InstruCourseTestSerializer, MeetingInstructorSerializer, MeetingStudentSerializer
+from courses.serializers import CartCourseSerializer, CourseSerializer, EnrollmentSerializer, InstruCourseTestSerializer, MeetingInstructorSerializer, MeetingStudentSerializer, MyTestSerializer
 from django.http.response import JsonResponse
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
@@ -282,15 +282,16 @@ class UploadVideo(CreateAPIView):
         try:
             video = request.FILES['video']
             video_duration = float(request.POST['video_duration'])
-            new_video, created = Video.objects.get_or_create(video=video, video_duration=video_duration)
+            video_title= request.POST['video_title']
+            new_video, created = Video.objects.get_or_create(video=video, video_duration=video_duration, video_title=video_title)
             new_video.save()
             return JsonResponse({
                 'video_id' : new_video.video_id
             })
         except Exception as e:
-            return JsonResponse({
+            return Response({
                 'message' : 'Please Pass Valid Data'
-            })
+            }, status=status.HTTP_400_BAD_REQUST)
 
 
 class SectionManagment(CreateAPIView, DestroyAPIView, UpdateAPIView):
@@ -301,9 +302,15 @@ class SectionManagment(CreateAPIView, DestroyAPIView, UpdateAPIView):
         except Exception as e:
             raise PermissionDenied
         try:
-            section_name = request.POST['section_name']
-            section = Section.objects.create(section_name=section_name)
+            data = json.loads(request.body)
+            section_article = data['section_article']
+            section_videos = data['section_videos']
+            section_name = data['section_name']
+            section = Section.objects.create(section_name=section_name,section_article=section_article)
             section.save()
+            for section_video in section_videos:
+                video = Video.objects.get(video_id=section_video)
+                section.section_videos.add(video)
             return JsonResponse({
                 'section_id' : section.section_id
             })
@@ -318,19 +325,19 @@ class SectionManagment(CreateAPIView, DestroyAPIView, UpdateAPIView):
         except Exception as e:
             raise PermissionDenied
         try:
-            section_id = request.POST['section_id']
+            data = json.loads(request.body)
+            section_id = data['section_id']
             section = Section.objects.get(section_id=section_id)
-            videos = request.POST.getlist('videos')
-            for video_id in videos:
-                section.section_videos.add(Video.objects.get(video_id=video_id))
+            section.section_name=data['section_name']
+            section.section_article=data['section_article']
             section.save()
             return JsonResponse({
                 'message' : 'Videos Added Successfully'
             })
         except Exception as e:
-            return JsonResponse({
+            return Response({
                 'message' : 'Please Pass Valid Data'
-            })
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -359,7 +366,9 @@ class CourseManagment(CreateAPIView, DestroyAPIView, UpdateAPIView):
             course_level = request.POST['course_level']
             course_image = request.FILES['course_image']
             course_promotional_video = request.FILES['course_promotional_video']
-            course_requirements = request.POST['course_requirements']
+            course_requirements = request.POST.getlist('course_requirements')
+            course_learning_goals = request.POST.getlist('course_learning_goals')
+            course_sections = request.POST.getlist('course_sections')
             course_message = request.POST['course_message']
             course_language = request.POST['course_language']
             course_subtitle = request.POST['course_subtitle']
@@ -370,9 +379,18 @@ class CourseManagment(CreateAPIView, DestroyAPIView, UpdateAPIView):
                 course_category=Category.objects.get(category_id=course_category), course_level=course_level,
                 course_instructor=instructor, course_price=course_price, currency=currency,
                 course_image=course_image, course_promotional_video=course_promotional_video,
-                course_message=course_message, course_requirements=course_requirements,
+                course_message=course_message,
                 course_language=course_language, course_subtitle=course_subtitle
             )
+            course.save()
+            for course_requirement in course_requirements:
+                course.course_requirements.add(CourseRequirement.objects.get(id=course_requirement))
+            course.save()
+            for course_learning_goal in course_learning_goals:
+                course.course_learning_goals.add(CourseLearningGoal.objects.get(id=course_learning_goal))
+            course.save()
+            for course_section in course_sections:
+                course.course_sections.add(Section.objects.get(id=course_section))
             course.save()
             try:
                 coupon_code = request.POST['coupon_code']
@@ -386,9 +404,9 @@ class CourseManagment(CreateAPIView, DestroyAPIView, UpdateAPIView):
                 'course_id' : course.course_id
             })
         except Exception as e:
-            return JsonResponse({
+            return Response({
                 'message' : 'Please Pass Valid Data'
-            })
+            }, status=status.HTTP_400_BAD_REQUEST)
             
     def update(self, request, *args, **kwargs):
         try:
@@ -416,7 +434,8 @@ class CourseManagment(CreateAPIView, DestroyAPIView, UpdateAPIView):
         except Exception as e:
             raise PermissionDenied
         try:
-            course = Course.objects.get(course_id=request.POST['course_id'])
+            data = json.loads(request.body)
+            course = Course.objects.get(course_id=data['course_id'])
             course.delete()
             return JsonResponse({
                 'message' : 'Course Deleted Successfully'
@@ -439,6 +458,7 @@ class CourseTestManagment(CreateAPIView):
             return Response({
                 'message' : 'please Pass Valid Data'
             }, status=status.HTTP_400_BAD_REQUEST) 
+
 
 
 
@@ -706,3 +726,110 @@ def add_live_meeting(request):
 @api_view(['GET'])
 def last_course(request):
     return Response(CartCourseSerializer(Course.objects.all().order_by('-course_rate').last()).data)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MyMultipleChoiceQuestionManagement(CreateAPIView):
+    def create(self, request, *args, **kwargs):
+        try:
+            instructor = Instructor.objects.get(user=Token.objects.get(key=request.headers['Authorization']).user)
+        except Exception as e:
+            raise PermissionDenied
+        try:
+            data = json.loads(request.body)
+            Mq = MultipleChoiceQuestion.objects.get(id=data['mq_id'])
+            answer= Answer.objects.get(id=data['answer_id'])   
+            is_correct=data['is_correct']
+            mq = MyMultipleChoiceQuestion.objects.create(
+                question=Mq, answer=answer,is_correct=is_correct
+            ) 
+            mq.save()
+            return Response({'message': 'success', 'id' : mq.id}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'message':'Please Pass Valid Data'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MyEditorialQuestionManagement(CreateAPIView):
+    def create(self, request, *args, **kwargs):
+        try:
+            instructor = Instructor.objects.get(user=Token.objects.get(key=request.headers['Authorization']).user)
+        except Exception as e:
+            raise PermissionDenied
+        try:
+            Eq = MultipleChoiceQuestion.objects.get(id=request.POST['eq_id'])
+            answer= request.POST['answer']   
+            answer_as_image=request.data['answer_as_image']
+            eq = MyMultipleChoiceQuestion.objects.create(
+                question=Eq, answer=answer,answer_as_image=answer_as_image
+            ) 
+            eq.save()
+            return Response({'message': 'success', 'id' : eq.id}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'message':'Please Pass Valid Data'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class MyCourseManagement(CreateAPIView, UpdateAPIView, RetrieveAPIView):
+    
+    def create(self, request, *args, **kwargs):
+        try:
+            instructor = Instructor.objects.get(user=Token.objects.get(key=request.headers['Authorization']).user)
+        except Exception as e:
+            raise PermissionDenied
+        try:
+            data=json.loads(request.body)
+            course_test = CourseTest.objects.get(id=data['course_test_id'])
+            my_mq = data['my_mq']
+            my_eq = data['my_eq']
+            my_course_test = MyTest.objects.create(instructor=instructor, course_test=course_test)
+            my_course_test.save()
+            for my_mq_obj in my_mq:
+                my_course_test.my_multi_choice_ques_answers.add(MyMultipleChoiceQuestion.objects.get(id=my_mq_obj))
+                if MyMultipleChoiceQuestion.objects.get(id=my_mq_obj).is_correct == True:
+                    my_course_test.total_correct+=1
+            for my_eq_obj in my_eq:
+                my_course_test.my_multi_choice_ques_answers.add(MyEditorialQuestion.objects.get(id=my_eq_obj))
+            my_course_test.save()
+            return Response({'message' : 'success'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'message':'Please Pass Valid Data'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def update(self, request, *args, **kwargs):
+        try:
+            instructor = Instructor.objects.get(user=Token.objects.get(key=request.headers['Authorization']).user)
+        except Exception as e:
+            raise PermissionDenied
+        try:
+            data = json.loads(request.body)
+            my_course_test = MyTest.objects.get(id=data['my_qs_id'])
+            ed_ques = MyEditorialQuestion.models.get(id=data['eq_que'])
+            is_correct = data['is_correct']
+            if is_correct:
+                ed_ques.is_correct = True
+                my_course_test.total_correct+=1
+                my_course_test.save()
+            return JsonResponse({'message' : 'success'})    
+        except Exception as e:
+            return Response({'message':'Please Pass Valid Data'}, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            instructor = Instructor.objects.get(user=Token.objects.get(key=request.headers['Authorization']).user)
+        except Exception as e:
+            raise PermissionDenied
+        return Response(MyTestSerializer(MyTest.objects.get(id=request.Get.get('my_q_id'))).data) 

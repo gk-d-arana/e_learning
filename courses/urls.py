@@ -30,8 +30,15 @@ urlpatterns = [
     path('my_meetings/', my_meetings),
     path('last_course/', last_course),
     path('add_live_meeting/', add_live_meeting),
-    
+    path('my_mq_management', MyMultipleChoiceQuestionManagement.as_view()),
+    path('my_eq_management', MyEditorialQuestionManagement.as_view()),
+    path('my_course_management', MyCourseManagement.as_view()),
 ]
+
+
+
+
+
 
 
 

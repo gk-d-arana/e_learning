@@ -179,7 +179,7 @@ class EditorialQuestion(models.Model):
 
 class MyMultipleChoiceQuestion(models.Model):
     question = models.ForeignKey(MultipleChoiceQuestion, on_delete=models.CASCADE, blank=True, null=True) 
-    answer = models.TextField(default="", blank=True, null=True) 
+    answer = models.ForeignKey(Answer, on_delete=models.SET_NULL,blank=True, null=True)
     is_correct = models.BooleanField(default=False,blank=True, null=True) 
     
     

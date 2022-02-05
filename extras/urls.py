@@ -10,5 +10,9 @@ urlpatterns = [
     path("rating_manager/", RatingApiView.as_view(), name="rating_manager"), 
     path("course_ratings/<str:course_id>/", CourseRatingApiView.as_view(), name="course_ratings"), 
     path("category_manager/", CategoryManager.as_view(), name="category_manager"),
-    path("parent_category_manager/", ParentCategoryManager.as_view(), name="category_manager")   
+    path("parent_category_manager/", ParentCategoryManager.as_view(), name="category_manager"),
+    path("liking_management*", LikingManagement.as_view(), name="liking_management"),
+    path("manage_privacy/", ManagePrivacy.as_view()),
+    path("comment_manager/", CommentManager.as_view()),
+    
 ]

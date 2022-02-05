@@ -2,7 +2,7 @@ import json
 from extras.serializers import ParentCategorySerializer, RatingSerializer
 from extras.models import Category, ParentCategory, Rating, Topic
 from rest_framework.response import Response
-from courses.serializers import CartCourseSerializer, CourseSerializer, EnrollmentSerializer, InstruCourseTestSerializer, MeetingInstructorSerializer, MeetingStudentSerializer, MyTestSerializer
+from courses.serializers import CartCourseSerializer, CourseSerializer, EnrollmentSerializer, HistorySerializer, InstruCourseTestSerializer, MeetingInstructorSerializer, MeetingStudentSerializer, MyTestSerializer
 from django.http.response import JsonResponse
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
@@ -55,8 +55,26 @@ class SearchCourses(ListAPIView):
         #except Exception as e:
         #    pass
         
-
-
+@api_view(['GET', 'DELETE'])
+def myhistory(request):
+    try:
+        instructor = Instructor.objects.get(user=Token.objects.get(key=request.headers['Authorization']).user)
+        history, created = MyHistory.objects.get_or_create(instructor=instructor)
+        history.save()
+        if request.method == 'DELETE':
+            try:
+                data = json.loads(request.body)
+                course = Course.objects.get(course_id=data['course_id'])
+                if course in history.courses.all():
+                    history.courses.remove(course)
+                    history.save()
+                    return  JsonResponse({'message' : 'success'})
+            except Exception as e:
+                return Response({'message' : 'Please Pass Valid Data'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(HistorySerializer(history).data)
+    except Exception as e:
+        raise PermissionDenied
+    
 
 
     
@@ -66,6 +84,14 @@ def course_details(request, course_id):
     in_wishlist = False
     in_cart = False
     in_my_learning = False
+    try:
+        instructor=Instructor.objects.get(user=Token.objects.get(key=request.headers['Authorization']).user)
+        history, created = MyHistory.objects.get_or_create(instructor=instructor)
+        if course not in history.courses.all(): 
+            history.courses.add(course)
+            history.save()
+    except Exception as e:
+        pass    
     try:
         my_learning_course = MyLearningCourse.objects.get(course=course)
         my_learning, created =MyLearning.objects.get_or_create(instructor=Instructor.objects.get(user=Token.objects.get(key=request.headers['Authorization']).user))
@@ -285,9 +311,9 @@ class UploadVideo(CreateAPIView):
             video_title= request.POST['video_title']
             new_video, created = Video.objects.get_or_create(video=video, video_duration=video_duration, video_title=video_title)
             new_video.save()
-            return JsonResponse({
+            return Response({
                 'video_id' : new_video.video_id
-            })
+            }, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({
                 'message' : 'Please Pass Valid Data'
@@ -568,10 +594,7 @@ class CourseTests(ListAPIView):
     queryset = CourseTest.objects.all()
     
     def list(self,request, course_id, *args, **kwargs):
-        try:
-            instructor = Instructor.objects.get(user=Token.objects.get(key=request.headers['Authorization']).user)
-        except Exception as e:
-            raise PermissionDenied
+        
         try:
             course = Course.objects.get(course_id=course_id)
             return Response(InstruCourseTestSerializer(course.course_test).data)
@@ -828,6 +851,7 @@ class MyCourseManagement(CreateAPIView, UpdateAPIView, RetrieveAPIView):
             return Response({'message':'Please Pass Valid Data'}, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request, *args, **kwargs):
+        
         try:
             instructor = Instructor.objects.get(user=Token.objects.get(key=request.headers['Authorization']).user)
         except Exception as e:

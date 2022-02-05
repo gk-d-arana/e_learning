@@ -57,8 +57,9 @@ class RatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rating
         fields = [
-            "rating_id", "instructor", "rating_content", "rating_value", "created_at"
+            "rating_id", "instructor", "rating_content", "rating_value", "created_at", "likes_count", "dislikes_count", 'instructor_rated'
         ]
+
 
 
 
@@ -66,8 +67,9 @@ class SimpleRatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rating
         fields = [
-            "rating_id", "rating_content", "rating_value", "created_at"
+            "rating_id", "rating_content", "rating_value", "created_at", "likes_count", "dislikes_count"
         ]
+
 
 
 
@@ -78,3 +80,11 @@ class PaymentTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentType
         fields = "__all__"
+        
+        
+class PrivacySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrivacyAndTerms
+        fields = [
+            "value"
+        ]

@@ -125,6 +125,16 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class HistoryCourseSerializer(serializers.ModelSerializer):
+    course_parent_category = ParentCategorySerializer(ParentCategory, many=True)
+    
+    class Meta:
+        model = Course
+        fields = [
+            "course_id" , "course_name", "course_parent_category"
+        ]
+
+
 
 
 class CartCourseSerializer(serializers.ModelSerializer):
@@ -242,4 +252,13 @@ class MyTestSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = MyTest
+        fields = "__all__"
+        
+        
+        
+class HistorySerializer(serializers.ModelSerializer):
+    instructor = SimpleInstructorSerializer(Instructor)
+    courses = HistoryCourseSerializer(Course, many=True)
+    class Meta:
+        model = MyHistory
         fields = "__all__"

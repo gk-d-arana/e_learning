@@ -52,10 +52,16 @@ INSTALLED_APPS = [
     'phonenumber_field',
     'users',
     'courses',
-    'extras',
+    'extras',    'django_extensions', # add this line
+    
     'orders',
     'chat',
 ]
+
+GRAPH_MODELS = {
+  'all_applications': True,
+  'group_models': True,
+}
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

@@ -2,11 +2,11 @@ from rest_framework.response import Response
 from courses.models import Course
 from django.core.exceptions import PermissionDenied
 from rest_framework.authtoken.models import Token
-from users.models import Instructor
+from users.models import Instructor, MyLearning
 from rest_framework import mixins
-from extras.serializers import CategorySerializer, PaymentTypeSerializer, RatingSerializer, SimpleCategorySerializer, ParentCategorySerializer, TopicSerializer
+from extras.serializers import CategorySerializer, PaymentTypeSerializer, PrivacySerializer, RatingSerializer, SimpleCategorySerializer, ParentCategorySerializer, TopicSerializer
 from django.http.response import JsonResponse
-from extras.models import Category, ParentCategory, PaymentType, Rating, Topic
+from extras.models import Category, ParentCategory, PaymentType, PrivacyAndTerms, Rating, RatingLikingObject, Topic
 from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework import status
 import json
@@ -143,7 +143,7 @@ class RatingApiView(CreateAPIView, UpdateAPIView, DestroyAPIView, ListAPIView):
             data = json.loads(request.body)
             rating_content = data['rating_content']
             rating_value = float(data['rating_value'])
-            course_rated = Course.objects.get(course_id=data['course_id'])
+            course_rated = Course.objects.get(course_id=data['course_id']),
         except:
             return Response({
                 'message' : 'Please Pass Valid Data'
@@ -151,7 +151,7 @@ class RatingApiView(CreateAPIView, UpdateAPIView, DestroyAPIView, ListAPIView):
 
         rating = Rating.objects.create(
             rating_content=rating_content, rating_value=rating_value, instructor=instructor,
-            course_rated=course_rated
+            course_rated=course_rated, instructor_rated=course_rated.course_instructor
         )
         rating.save()
         return JsonResponse({
@@ -251,3 +251,111 @@ class CategoryManager(CreateAPIView, UpdateAPIView, DestroyAPIView):
         category.save()
         return Response({'message':'success'}, status.HTTP_201_CREATED)
             
+
+class ManagePrivacy(CreateAPIView, RetrieveAPIView):
+    def get(self, request, *args, **kwargs):
+        return Response(PrivacySerializer(PrivacyAndTerms.objects.first()).data)
+    def create(self, request, *args, **kwargs):
+        try:
+            user=Token.objects.get(key=request.headers['Authorization']).user
+            if not user.is_staff:
+                raise PermissionDenied                
+        except Exception as e:
+            raise PermissionDenied  
+        try:
+            data = json.loads(request.body)
+            privacy = PrivacyAndTerms.objects.first()
+            if privacy:
+                privacy.value= data['value']
+                privacy.save()
+            else:
+                privacy= PrivacyAndTerms.objects.create(value=data['value'])
+                privacy.save()
+            return Response({'message' : 'success'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'message':'Please Pass Valid Data'}, status=status.HTTP_400_BAD_REQUEST)
+        
+           
+class CommentManager(CreateAPIView, UpdateAPIView, DestroyAPIView, ListAPIView):
+    def create(self, request, *args, **kwargs):
+        try:
+            instructor = Instructor.objects.get(user=Token.objects.get(key=request.headers['Authorization']).user)
+        except Exception as e:
+            raise PermissionDenied
+        try:
+            data = json.loads(request.body)
+            rating_content = data['rating_content']
+            rating_value = float(data['rating_value'])
+            instructor_rated = Instructor.objects.get(id=data['instructor_id'])
+        except Exception as e:
+            print(e)
+            return Response({
+                'message' : 'Please Pass Valid Data'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        courses = Course.objects.filter(course_instructor=instructor_rated)
+        my_learning, created = MyLearning.objects.get_or_create(instructor=instructor)
+        my_learning.save()
+        for course in courses:
+            if course in my_learning.all():
+                rating = Rating.objects.create(
+                    rating_content=rating_content, rating_value=rating_value, instructor=instructor,
+                    instructor_rated=instructor_rated, course_rated=course
+                )
+                rating.save()
+                return JsonResponse({
+                    'message' : 'Rating Created Successfully',
+                    "rating" : RatingSerializer(rating).data
+                })
+        raise PermissionDenied
+    def list(self, request, *args, **kwargs):
+        instructor = Instructor.objects.get(instructor_id=request.GET.get('instructor_id'))
+        return Response(RatingSerializer(Rating.objects.filter(course_rated__course_instructor=instructor), many=True).data)
+             
+ 
+            
+class LikingManagement(CreateAPIView):
+    def create(self, request, *args, **kwargs):
+        try:
+            instructor = Instructor.objects.get(user=Token.objects.get(key=request.headers['Authorization']).user)
+        except Exception as e:
+            raise PermissionDenied
+        try:
+            data = json.loads(request.body)
+            rating = Rating.objects.get(rating_id = data['rating_id'])
+            try:
+                ratingLinkingObject = RatingLikingObject.objects.get(rating=rating, instructor=instructor)
+                if ratingLinkingObject.is_like:
+                    if data['is_like']:
+                        return Response({'message' : 'Already Liked'})
+                    else:
+                        ratingLinkingObject.is_like = False
+                        ratingLinkingObject.save()
+                        rating.likes_count -= 1
+                        rating.dislikes_count += 1
+                        rating.save()
+                        return Response({'message' : 'success'})
+                else:
+                    if not data['is_like']:
+                        return Response({'message' : 'Already Disliked'})
+                    else:
+                        ratingLinkingObject.is_like = True
+                        ratingLinkingObject.save()
+                        rating.likes_count += 1
+                        rating.dislikes_count -= 1
+                        rating.save()
+                        return Response({'message' : 'success'})
+            except Exception as e:
+                ratingLinkingObject = RatingLikingObject.objects.create(rating=rating, instructor=instructor)
+                ratingLinkingObject.save()
+                if data['is_like']:
+                    rating.likes_count += 1
+                    ratingLinkingObject.is_like = True
+                    ratingLinkingObject.save()                   
+                else:
+                    rating.dislikes_count += 1
+                rating.save()
+                return Response({'message' : 'success'})
+        except:
+            return Response({
+                'message' : 'Please Pass Valid Data'
+            }, status=status.HTTP_400_BAD_REQUEST)

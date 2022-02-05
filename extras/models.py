@@ -84,9 +84,24 @@ class Rating(models.Model):
          default = uuid.uuid4,
          editable = False)
     instructor = models.ForeignKey(Instructor , on_delete=models.CASCADE,blank=True, null=True)
+    instructor_rated = models.ForeignKey(Instructor , on_delete=models.CASCADE,blank=True, null=True, related_name="instructor_rated")
     rating_content = models.TextField(default="")
     rating_value = models.FloatField(default=0)
     course_rated = models.ForeignKey('courses.Course', on_delete=models.CASCADE,blank=True, null=True)
+    likes_count = models.PositiveIntegerField(default=0,blank=True, null=True)
+    dislikes_count = models.PositiveIntegerField(default=0,blank=True, null=True)
     created_at = models.DateField(auto_now_add=True)
     def __str__(self):
         return "Rating For Instructor {} For Course {}".format(self.instructor.user.username, self.course_rated.course_name)
+
+class RatingLikingObject(models.Model):
+    rating = models.ForeignKey(Rating, on_delete=models.CASCADE,blank=True, null=True)
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE,blank=True, null=True)
+    is_like = models.BooleanField(default=False,blank=True, null=True)
+    
+    
+
+    
+class PrivacyAndTerms(models.Model):
+    value = models.TextField(default="", blank=True, null=True)
+    

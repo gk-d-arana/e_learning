@@ -20,7 +20,7 @@ urlpatterns = [
     path('upload_video/', UploadVideo.as_view(), name="upload_video"),
     path('delete_course/', DeleteCourse.as_view(), name="delete_course"),    
     path('home_courses/', home_courses, name="home_courses"),
-    path('section_managment/', SectionManagment.as_view(), name="section_managment"),
+    path('section_management/', SectionManagment.as_view(), name="section_managment"),
     path('course_managment/', CourseManagment.as_view(), name="course_managment"),
     path('course_test_managment/', CourseTestManagment.as_view(), name="course_test_managment"),
     path('wishlist_managment/', WishListManagment.as_view()),
@@ -33,9 +33,9 @@ urlpatterns = [
     path('my_mq_management', MyMultipleChoiceQuestionManagement.as_view()),
     path('my_eq_management', MyEditorialQuestionManagement.as_view()),
     path('my_course_management', MyCourseManagement.as_view()),
+    path('myhistory/', myhistory),
+
 ]
-
-
 
 
 

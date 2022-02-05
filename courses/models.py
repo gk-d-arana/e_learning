@@ -14,8 +14,6 @@ class Video(models.Model):
          editable = False)
     video = models.FileField(upload_to="static/videos")
     video_title = models.CharField(max_length=1000, blank=True, null=True)
-    #section = models.ForeignKey('Section', on_delete=models.CASCADE, null=True, blank=True)
-    #course = models.ForeignKey('Course', on_delete=models.CASCADE, null=True, blank=True)
     video_duration = models.FloatField(default=0)
 
     def __str__(self):
@@ -214,3 +212,10 @@ class MyTest(models.Model):
     my_multi_choice_ques_answers = models.ManyToManyField(MyMultipleChoiceQuestion)
     my_edot_ques_answers = models.ManyToManyField(MyEditorialQuestion)
     total_correct = models.PositiveIntegerField(default=0, blank=True, null=True)
+    
+    
+class MyHistory(models.Model):
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
+    courses = models.ManyToManyField(Course, blank=True)    
+    
+    
